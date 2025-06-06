@@ -4,13 +4,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vcs.changes.ChangeListManager
+import com.intellij.openapi.vcs.changes.ui.CommitChangeListDialog
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.ui.content.ContentFactory
 import liveplugin.*
 import java.awt.BorderLayout
 import java.awt.GridLayout
 import javax.swing.*
-
 
 class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayout()) {
 
@@ -73,6 +73,17 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
             } else if (textArea.text.trim().isBlank()) {
                 Messages.showInfoMessage(project, "Please enter a commit message", "FoxJ: Commit")
             } else {
+                // @todo: we prob should clean up this format/generation later
+                CommitChangeListDialog.commitChanges(
+                    project,
+                    changes,
+                    changeListManager.defaultChangeList,
+                    null,
+                    typeComboBox.selectedItem.toString() +
+                    (importantCheckbox.isSelected).let { if (it) "!" else "" } +
+                    ": " + textArea.text.trim()
+                )
+
                 show("FoxJ: Commit succeeded.")
             }
         }
