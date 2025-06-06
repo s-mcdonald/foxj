@@ -67,6 +67,11 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
             show("Commit succeeded.")
         }
     }
+
+    override fun addNotify() {
+        super.addNotify()
+        rootPane?.defaultButton = btnCommit
+    }
 }
 
 class FilesPanel(private val project: Project) : JPanel(BorderLayout()) {
