@@ -9,6 +9,8 @@ import java.awt.GridLayout
 import javax.swing.JPanel
 import javax.swing.*
 import liveplugin.*
+import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.vcs.changes.ChangeListManager
 
 class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayout()) {
 
@@ -28,7 +30,6 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
 
     val buttonPanel = JPanel(GridLayout(2, 2, 2, 2))
 
-    // @todo: make this the default action
     val btnCommit = JButton("Commit")
 
     val typeComboBox = JComboBox(commitTypes)
@@ -64,7 +65,16 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
 
     private fun commitSelectedChanges() {
         ApplicationManager.getApplication().invokeLater {
-            show("Commit succeeded.")
+            val changeListManager = ChangeListManager.getInstance(project)
+            val changes = changeListManager.defaultChangeList.changes.toList()
+
+            if (changes.isEmpty()) {
+                show("FoxJ: Nothing to commit")
+            } else if (textArea.text.trim().isBlank()) {
+                show("FoxJ: Please enter a commit message")
+            } else {
+                show("FoxJ: Commit succeeded.")
+            }
         }
     }
 
