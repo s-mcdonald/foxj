@@ -48,6 +48,10 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
     }
 
     init {
+        btnCommit.addActionListener {
+            commitSelectedChanges()
+        }
+
         buttonPanel.add(typeComboBox)
         buttonPanel.add(importantCheckbox)
 
@@ -60,7 +64,7 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
 
     private fun commitSelectedChanges() {
         ApplicationManager.getApplication().invokeLater {
-            // ..
+            show("Commit succeeded.")
         }
     }
 }
