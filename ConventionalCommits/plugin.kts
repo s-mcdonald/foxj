@@ -1,16 +1,15 @@
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.ui.content.ContentFactory
+import liveplugin.*
 import java.awt.BorderLayout
 import java.awt.GridLayout
-import javax.swing.JPanel
 import javax.swing.*
-import liveplugin.*
-import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.vcs.changes.ChangeListManager
 
 
 class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayout()) {
