@@ -12,6 +12,7 @@ import liveplugin.*
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vcs.changes.ChangeListManager
 
+
 class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayout()) {
 
     val commitTypes = arrayOf(
@@ -71,7 +72,7 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
             if (changes.isEmpty()) {
                 show("FoxJ: Nothing to commit")
             } else if (textArea.text.trim().isBlank()) {
-                show("FoxJ: Please enter a commit message")
+                Messages.showInfoMessage(project, "Please enter a commit message", "FoxJ: Commit")
             } else {
                 show("FoxJ: Commit succeeded.")
             }
