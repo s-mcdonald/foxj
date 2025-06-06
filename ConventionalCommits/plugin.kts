@@ -7,12 +7,54 @@ import com.intellij.ui.content.ContentFactory
 import java.awt.BorderLayout
 import java.awt.GridLayout
 import javax.swing.JPanel
+import javax.swing.*
 import liveplugin.*
 
 class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayout()) {
+
+    val commitTypes = arrayOf(
+        "feat",
+        "fix",
+        "chore",
+        "style",
+        "refactor",
+        "revert",
+        "test",
+        "perf",
+        "build",
+        "ci",
+        "docs",
+    )
+
     val buttonPanel = JPanel(GridLayout(2, 2, 2, 2))
 
+    // @todo: make this the default action
+    val btnCommit = JButton("Commit")
+
+    val typeComboBox = JComboBox(commitTypes)
+    val importantCheckbox = JCheckBox("Important")
+
+    private val textArea = JTextArea(5, 20).apply {
+        lineWrap = true
+        wrapStyleWord = true
+        background = UIManager.getColor("EditorPane.background")
+        foreground = UIManager.getColor("TextArea.foreground")
+        caretColor = UIManager.getColor("TextArea.caretForeground")
+    }
+
+    val btnUndoCommit = JButton("Undo Last Commit").apply {
+        background = UIManager.getColor("Button.background")
+        foreground = UIManager.getColor("Button.foreground")
+    }
+
     init {
+        buttonPanel.add(typeComboBox)
+        buttonPanel.add(importantCheckbox)
+
+        buttonPanel.add(btnCommit)
+        buttonPanel.add(btnUndoCommit)
+
+        add(JScrollPane(textArea), BorderLayout.CENTER)
         add(buttonPanel, BorderLayout.SOUTH)
     }
 
