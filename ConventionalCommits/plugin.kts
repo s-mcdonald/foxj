@@ -112,6 +112,8 @@ project?.let { currentProject ->
     val filesContent = contentFactory.createContent(changedFilesPanel, "Files", false)
     val utilContent = contentFactory.createContent(utilPanel, "Utilities", false)
 
+    ccContent.isCloseable = false
+
     contentManager.removeAllContents(true)
     contentManager.addContent(ccContent)
     contentManager.addContent(filesContent)
