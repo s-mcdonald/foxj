@@ -137,7 +137,7 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
         rootPane?.defaultButton = btnCommit
     }
 
-    fun commitWithMessage(project: Project, message: String) {
+    private fun commitWithMessage(project: Project, message: String) {
         val changeListManager = ChangeListManager.getInstance(project)
         val defaultChangeList: LocalChangeList = changeListManager.defaultChangeList
         val changes = defaultChangeList.changes.toList()
@@ -178,16 +178,6 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
     }
 }
 
-class FilesPanel(private val project: Project) : JPanel(BorderLayout()) {
-    val buttonPanel = JPanel(GridLayout(5, 2, 10, 10))
-    init {
-        add(buttonPanel, BorderLayout.SOUTH)
-    }
-    private fun actionHandler() {
-        // action here
-    }
-}
-
 class SettingsPanel(private val project: Project) : JPanel(BorderLayout()) {
     val buttonPanel = JPanel(GridLayout(5, 2, 10, 10))
     val chkUseCommitDialog = JCheckBox("Use Commit Dialog")
@@ -205,9 +195,7 @@ project?.let { currentProject ->
     val disposable = Disposer.newDisposable("foxJCommitsPanel")
     Disposer.register(pluginDisposable, disposable)
 
-
     val settingsPanel = SettingsPanel(currentProject)
-    val changedFilesPanel = FilesPanel(currentProject)
     val conventionalCommitsPanel = ConventionalCommitsPanel(currentProject, settingsPanel)
 
     val placeholderPanel = JPanel()
@@ -223,14 +211,12 @@ project?.let { currentProject ->
 
     val ccContent = contentFactory.createContent(conventionalCommitsPanel, "Commit", false)
     val settingsContent = contentFactory.createContent(settingsPanel, "Settings", false)
-    val filesContent = contentFactory.createContent(changedFilesPanel, "Files", false)
 
     ccContent.isCloseable = false
     settingsContent.isCloseable = false
 
     contentManager.removeAllContents(true)
     contentManager.addContent(ccContent)
-    contentManager.addContent(filesContent)
     contentManager.addContent(settingsContent)
 
     Disposer.register(disposable, Disposable {
