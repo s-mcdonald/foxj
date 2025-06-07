@@ -24,7 +24,7 @@ import liveplugin.*
 
 class ConventionalCommitsPanel(
     private val project: Project,
-    private val settings: UtilPanel
+    private val settings: SettingsPanel
     ) : JPanel(BorderLayout()) {
 
     private val commitTypes = arrayOf(
@@ -194,7 +194,7 @@ class FilesPanel(private val project: Project) : JPanel(BorderLayout()) {
     }
 }
 
-class UtilPanel(private val project: Project) : JPanel(BorderLayout()) {
+class SettingsPanel(private val project: Project) : JPanel(BorderLayout()) {
     val buttonPanel = JPanel(GridLayout(5, 2, 10, 10))
     init {
         add(buttonPanel, BorderLayout.SOUTH)
@@ -209,9 +209,9 @@ project?.let { currentProject ->
     Disposer.register(pluginDisposable, disposable)
 
 
-    val utilPanel = UtilPanel(currentProject)
+    val settingsPanel = SettingsPanel(currentProject)
     val changedFilesPanel = FilesPanel(currentProject)
-    val conventionalCommitsPanel = ConventionalCommitsPanel(currentProject, utilPanel)
+    val conventionalCommitsPanel = ConventionalCommitsPanel(currentProject, settingsPanel)
 
     val placeholderPanel = JPanel()
     val toolWindow = currentProject.registerToolWindow(
@@ -225,15 +225,16 @@ project?.let { currentProject ->
     val contentFactory = ContentFactory.SERVICE.getInstance()
 
     val ccContent = contentFactory.createContent(conventionalCommitsPanel, "Commit", false)
+    val settingsContent = contentFactory.createContent(settingsPanel, "Settings", false)
     val filesContent = contentFactory.createContent(changedFilesPanel, "Files", false)
-    val utilContent = contentFactory.createContent(utilPanel, "Utilities", false)
 
     ccContent.isCloseable = false
+    settingsContent.isCloseable = false
 
     contentManager.removeAllContents(true)
     contentManager.addContent(ccContent)
     contentManager.addContent(filesContent)
-    contentManager.addContent(utilContent)
+    contentManager.addContent(settingsContent)
 
     Disposer.register(disposable, Disposable {
         show("🔻 Conventional Commits plugin stopped.")
