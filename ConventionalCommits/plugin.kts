@@ -1,26 +1,133 @@
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.editor.colors.EditorColors
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
+import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vcs.changes.ChangeListManager
+import com.intellij.openapi.vcs.changes.InvokeAfterUpdateMode
 import com.intellij.openapi.vcs.changes.LocalChangeList
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
 import com.intellij.openapi.vcs.changes.ui.CommitChangeListDialog
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.ui.content.ContentFactory
-import com.intellij.openapi.vcs.changes.Change
 
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.GridLayout
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import javax.swing.JCheckBox
+import javax.swing.JPanel
+import javax.swing.JScrollPane
 import javax.swing.*
 
+import com.intellij.icons.AllIcons
+
 import liveplugin.*
+
+class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) {
+
+    private val panel = JPanel()
+    private val scrollPane = JScrollPane(panel)
+
+    init {
+        layout = BorderLayout()
+        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+
+        add(scrollPane, BorderLayout.CENTER)
+
+        ApplicationManager.getApplication().messageBus.connect().subscribe(
+            VirtualFileManager.VFS_CHANGES,
+            object : BulkFileListener {
+                override fun before(events: List<VFileEvent>) {
+                    // dont think we need this yet. I'll leave it blank for now
+                }
+
+                override fun after(events: List<VFileEvent>) {
+                    refreshFileList()
+                }
+            }
+        )
+
+        refreshFileList()
+    }
+
+    private fun refreshFileList() {
+        val changeListManager = ChangeListManager.getInstance(project)
+
+        changeListManager.invokeAfterUpdate({
+            SwingUtilities.invokeLater {
+                panel.removeAll()
+
+                val modifiedFiles = getModifiedFiles()
+                for (file in modifiedFiles) {
+                    val checkBox = JCheckBox(file.name)
+                    checkBox.toolTipText = file.path
+
+                    checkBox.addMouseListener(object : MouseAdapter() {
+                        override fun mouseClicked(e: MouseEvent) {
+                            if (e.clickCount == 2) {
+                                com.intellij.openapi.fileEditor.FileEditorManager
+                                    .getInstance(project)
+                                    .openFile(file, true)
+                            }
+                        }
+                    })
+
+                    panel.add(checkBox)
+                }
+
+                panel.revalidate()
+                panel.repaint()
+            }
+        }, InvokeAfterUpdateMode.BACKGROUND_CANCELLABLE, "FoxJ VCS Refresh", ModalityState.NON_MODAL)
+    }
+
+    private fun refreshFileList2() {
+        SwingUtilities.invokeLater {
+            panel.removeAll()
+
+            val modifiedFiles: List<VirtualFile> = getModifiedFiles()
+
+            for (file in modifiedFiles) {
+                val checkBox = JCheckBox(file.name)
+                checkBox.toolTipText = file.path
+
+                checkBox.addMouseListener(object : MouseAdapter() {
+                    override fun mouseClicked(e: MouseEvent) {
+                        if (e.clickCount == 2) {
+                            openFileInEditor(file)
+                        }
+                    }
+                })
+
+                panel.add(checkBox)
+            }
+
+            panel.revalidate()
+            panel.repaint()
+        }
+    }
+
+    private fun getModifiedFiles(): List<VirtualFile> {
+        val changeListManager = ChangeListManager.getInstance(project)
+        return changeListManager.allChanges.mapNotNull { it.virtualFile }
+    }
+
+    private fun openFileInEditor(file: VirtualFile) {
+        // @todo: Implement logic to open file in editor
+    }
+}
 
 class ConventionalCommitsPanel(private val project: Project, private val settings: SettingsPanel)
     : JPanel(BorderLayout()) {
@@ -197,6 +304,7 @@ project?.let { currentProject ->
 
     val settingsPanel = SettingsPanel(currentProject)
     val conventionalCommitsPanel = ConventionalCommitsPanel(currentProject, settingsPanel)
+    val filesPanel = ModifiedFilesPanel(currentProject)
 
     val placeholderPanel = JPanel()
     val toolWindow = currentProject.registerToolWindow(
@@ -206,17 +314,22 @@ project?.let { currentProject ->
         anchor = ToolWindowAnchor.RIGHT
     )
 
+    toolWindow.setIcon(AllIcons.Vcs.CommitNode);
+
     val contentManager = toolWindow.contentManager
     val contentFactory = ContentFactory.SERVICE.getInstance()
 
     val ccContent = contentFactory.createContent(conventionalCommitsPanel, "Commit", false)
+    val filesContent = contentFactory.createContent(filesPanel, "Files", false)
     val settingsContent = contentFactory.createContent(settingsPanel, "Settings", false)
 
     ccContent.isCloseable = false
+    filesContent.isCloseable = false
     settingsContent.isCloseable = false
 
     contentManager.removeAllContents(true)
     contentManager.addContent(ccContent)
+    contentManager.addContent(filesContent)
     contentManager.addContent(settingsContent)
 
     Disposer.register(disposable, Disposable {
