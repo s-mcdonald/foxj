@@ -23,8 +23,8 @@ import javax.swing.*
 import liveplugin.*
 
 class ConventionalCommitsPanel(
-    private val project: Project,
-    private val settings: SettingsPanel
+        private val project: Project,
+        private val settings: SettingsPanel
     ) : JPanel(BorderLayout()) {
 
     private val commitTypes = arrayOf(
@@ -95,7 +95,7 @@ class ConventionalCommitsPanel(
 
         ApplicationManager.getApplication().invokeLater {
 
-            if (true) {
+            if (settings.useCommitDialog()) {
                 // @todo: make a toggle so users can choose how they want this
                 CommitChangeListDialog.commitChanges(
                     project,
@@ -196,11 +196,14 @@ class FilesPanel(private val project: Project) : JPanel(BorderLayout()) {
 
 class SettingsPanel(private val project: Project) : JPanel(BorderLayout()) {
     val buttonPanel = JPanel(GridLayout(5, 2, 10, 10))
+    val chkUseCommitDialog = JCheckBox("Use Commit Dialog")
     init {
+        buttonPanel.add(chkUseCommitDialog)
         add(buttonPanel, BorderLayout.SOUTH)
     }
-    private fun actionHandler() {
-        // action here
+
+    public fun useCommitDialog(): Boolean {
+        return chkUseCommitDialog.isSelected
     }
 }
 
