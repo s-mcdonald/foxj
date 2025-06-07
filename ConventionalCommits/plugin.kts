@@ -22,10 +22,8 @@ import javax.swing.*
 
 import liveplugin.*
 
-class ConventionalCommitsPanel(
-        private val project: Project,
-        private val settings: SettingsPanel
-    ) : JPanel(BorderLayout()) {
+class ConventionalCommitsPanel(private val project: Project, private val settings: SettingsPanel)
+    : JPanel(BorderLayout()) {
 
     private val commitTypes = arrayOf(
         "feat",
@@ -88,15 +86,12 @@ class ConventionalCommitsPanel(
 
         val commitMessage = generateScopeText()
 
-        if (!canPerformCommit(changes))
-        {
+        if (!canPerformCommit(changes)) {
             return
         }
 
         ApplicationManager.getApplication().invokeLater {
-
             if (settings.useCommitDialog()) {
-                // @todo: make a toggle so users can choose how they want this
                 CommitChangeListDialog.commitChanges(
                     project,
                     changes,
@@ -124,8 +119,7 @@ class ConventionalCommitsPanel(
         return true
     }
 
-    private fun generateScopeText(): String
-    {
+    private fun generateScopeText(): String {
         val input = scopeComboBox.editor.item.toString().trim()
 
         if (input.isNotEmpty() && !scopeList.contains(input)) {
@@ -202,7 +196,7 @@ class SettingsPanel(private val project: Project) : JPanel(BorderLayout()) {
         add(buttonPanel, BorderLayout.SOUTH)
     }
 
-    public fun useCommitDialog(): Boolean {
+    fun useCommitDialog(): Boolean {
         return chkUseCommitDialog.isSelected
     }
 }
