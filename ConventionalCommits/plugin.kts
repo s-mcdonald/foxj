@@ -22,7 +22,10 @@ import javax.swing.*
 
 import liveplugin.*
 
-class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayout()) {
+class ConventionalCommitsPanel(
+    private val project: Project,
+    private val settings: UtilPanel
+    ) : JPanel(BorderLayout()) {
 
     private val commitTypes = arrayOf(
         "feat",
@@ -205,9 +208,10 @@ project?.let { currentProject ->
     val disposable = Disposer.newDisposable("foxJCommitsPanel")
     Disposer.register(pluginDisposable, disposable)
 
-    val conventionalCommitsPanel = ConventionalCommitsPanel(currentProject)
+
     val utilPanel = UtilPanel(currentProject)
     val changedFilesPanel = FilesPanel(currentProject)
+    val conventionalCommitsPanel = ConventionalCommitsPanel(currentProject, utilPanel)
 
     val placeholderPanel = JPanel()
     val toolWindow = currentProject.registerToolWindow(
