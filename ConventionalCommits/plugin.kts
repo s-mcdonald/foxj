@@ -86,6 +86,9 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
                     scopeComboBox.insertItemAt(input, 1)
                 }
 
+                // lets get the scope
+                val scopeText = if (input.isNotEmpty()) "($input)" else ""
+
                 // @todo: we prob should clean up this format/generation later
                 CommitChangeListDialog.commitChanges(
                     project,
@@ -93,6 +96,7 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
                     changeListManager.defaultChangeList,
                     null,
                     typeComboBox.selectedItem.toString() +
+                    scopeText +
                     (importantCheckbox.isSelected).let { if (it) "!" else "" } +
                     ": " + textArea.text.trim()
                 )
