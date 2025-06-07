@@ -3,14 +3,22 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vcs.AbstractVcs
+import com.intellij.openapi.vcs.ProjectLevelVcsManager
+import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.changes.ChangeListManager
+import com.intellij.openapi.vcs.changes.LocalChangeList
+import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
 import com.intellij.openapi.vcs.changes.ui.CommitChangeListDialog
+import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.ui.content.ContentFactory
 import liveplugin.*
 import java.awt.BorderLayout
 import java.awt.GridLayout
 import javax.swing.*
+
+
 
 class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayout()) {
 
@@ -86,20 +94,25 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
                     scopeComboBox.insertItemAt(input, 1)
                 }
 
-                // lets get the scope
                 val scopeText = if (input.isNotEmpty()) "($input)" else ""
 
-                // @todo: we prob should clean up this format/generation later
+                val commitMessage = typeComboBox.selectedItem.toString() +
+                                    scopeText +
+                                    (importantCheckbox.isSelected).let { if (it) "!" else "" } +
+                                    ": " + textArea.text.trim()
+
+                // @todo: make a toggle so users can choose how they wanty this
+                /*
                 CommitChangeListDialog.commitChanges(
                     project,
                     changes,
                     changeListManager.defaultChangeList,
                     null,
-                    typeComboBox.selectedItem.toString() +
-                    scopeText +
-                    (importantCheckbox.isSelected).let { if (it) "!" else "" } +
-                    ": " + textArea.text.trim()
+                    commitMessage
                 )
+                */
+
+                commitWithMessage(project, commitMessage)
             }
         }
     }
@@ -107,6 +120,48 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
     override fun addNotify() {
         super.addNotify()
         rootPane?.defaultButton = btnCommit
+    }
+
+    fun commitWithMessage(project: Project, message: String) {
+        val changeListManager = ChangeListManager.getInstance(project)
+        val defaultChangeList: LocalChangeList = changeListManager.defaultChangeList
+        val changes = defaultChangeList.changes.toList()
+
+        if (changes.isEmpty()) {
+            show("No changes to commit")
+            return
+        }
+
+        val vcsManager = ProjectLevelVcsManager.getInstance(project)
+        val vcs = vcsManager.findVcsByName("Git")
+        val checkinEnv: CheckinEnvironment? = vcs?.checkinEnvironment
+
+        if (checkinEnv != null) {
+
+            ApplicationManager.getApplication().executeOnPooledThread {
+                try {
+                    show("Committing in background...")
+
+                    val result = checkinEnv.commit(changes, message)
+
+                    if (result.isNullOrEmpty()) {
+                        show("Commit succeeded")
+                    } else {
+                        for (e in result) {
+                            show("${e.message}")
+                        }
+                    }
+
+                    VcsDirtyScopeManager.getInstance(project).markEverythingDirty()
+                } catch (e: Exception) {
+                    show("Exception during commit: ${e.message}")
+                }
+            }
+
+            VcsDirtyScopeManager.getInstance(project).markEverythingDirty()
+        } else {
+            show("CheckinEnvironment not available for VCS: ${vcs?.name}")
+        }
     }
 }
 
