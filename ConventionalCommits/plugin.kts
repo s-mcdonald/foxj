@@ -1,11 +1,11 @@
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.colors.EditorColors
+import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vcs.AbstractVcs
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
-import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vcs.changes.LocalChangeList
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
@@ -13,16 +13,18 @@ import com.intellij.openapi.vcs.changes.ui.CommitChangeListDialog
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.ui.content.ContentFactory
-import liveplugin.*
+import com.intellij.openapi.vcs.changes.Change
+
 import java.awt.BorderLayout
+import java.awt.Color
 import java.awt.GridLayout
 import javax.swing.*
 
-
+import liveplugin.*
 
 class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayout()) {
 
-    val commitTypes = arrayOf(
+    private val commitTypes = arrayOf(
         "feat",
         "fix",
         "chore",
@@ -44,22 +46,20 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
         "evaluator",
     )
 
-    val buttonPanel = JPanel(GridLayout(2, 2, 2, 2))
-
-    val btnCommit = JButton("Commit")
-
-    val typeComboBox = JComboBox(commitTypes)
     private val scopeComboBox = JComboBox(scopeList.toTypedArray())
 
+    val buttonPanel = JPanel(GridLayout(2, 2, 2, 2))
+    val btnCommit = JButton("Commit")
+    val typeComboBox = JComboBox(commitTypes)
     val importantCheckbox = JCheckBox("Important")
-    val txtProjectKey = JTextField("", 20)
+    val globalScheme = EditorColorsManager.getInstance().globalScheme
 
     private val textArea = JTextArea(5, 20).apply {
         lineWrap = true
         wrapStyleWord = true
-        background = UIManager.getColor("EditorPane.background")
-        foreground = UIManager.getColor("TextArea.foreground")
-        caretColor = UIManager.getColor("TextArea.caretForeground")
+        background = globalScheme.defaultBackground
+        foreground = globalScheme.defaultForeground
+        caretColor = globalScheme.getColor(EditorColors.CARET_COLOR) ?: Color.WHITE
     }
 
     init {
@@ -79,30 +79,21 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
     }
 
     private fun commitSelectedChanges() {
+
+        val changeListManager = ChangeListManager.getInstance(project)
+        val changes = changeListManager.defaultChangeList.changes.toList()
+
+        val commitMessage = generateScopeText()
+
+        if (!canPerformCommit(changes))
+        {
+            return
+        }
+
         ApplicationManager.getApplication().invokeLater {
-            val changeListManager = ChangeListManager.getInstance(project)
-            val changes = changeListManager.defaultChangeList.changes.toList()
 
-            if (changes.isEmpty()) {
-                show("FoxJ: Nothing to commit")
-            } else if (textArea.text.trim().isBlank()) {
-                Messages.showInfoMessage(project, "Please enter a commit message", "FoxJ: Commit")
-            } else {
-                val input = scopeComboBox.editor.item.toString().trim()
-                if (input.isNotEmpty() && !scopeList.contains(input)) {
-                    scopeList.add(0, input)
-                    scopeComboBox.insertItemAt(input, 1)
-                }
-
-                val scopeText = if (input.isNotEmpty()) "($input)" else ""
-
-                val commitMessage = typeComboBox.selectedItem.toString() +
-                                    scopeText +
-                                    (importantCheckbox.isSelected).let { if (it) "!" else "" } +
-                                    ": " + textArea.text.trim()
-
-                // @todo: make a toggle so users can choose how they wanty this
-                /*
+            if (true) {
+                // @todo: make a toggle so users can choose how they want this
                 CommitChangeListDialog.commitChanges(
                     project,
                     changes,
@@ -110,11 +101,38 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
                     null,
                     commitMessage
                 )
-                */
-
+            } else {
                 commitWithMessage(project, commitMessage)
             }
         }
+    }
+
+    private fun canPerformCommit(changes: List<Change>): Boolean {
+        if (changes.isEmpty()) {
+            show("FoxJ: Nothing to commit")
+            return false
+        }
+
+        if (textArea.text.trim().isBlank()) {
+            Messages.showInfoMessage(project, "Please enter a commit message", "FoxJ: Commit")
+            return false
+        }
+
+        return true
+    }
+
+    private fun generateScopeText(): String
+    {
+        val input = scopeComboBox.editor.item.toString().trim()
+
+        if (input.isNotEmpty() && !scopeList.contains(input)) {
+            scopeList.add(0, input)
+            scopeComboBox.insertItemAt(input, 1)
+        }
+
+        val scopeText = if (input.isNotEmpty()) "($input)" else ""
+
+        return "${typeComboBox.selectedItem}$scopeText${if (importantCheckbox.isSelected) "!" else ""}: ${textArea.text.trim()}"
     }
 
     override fun addNotify() {
@@ -157,8 +175,6 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
                     show("Exception during commit: ${e.message}")
                 }
             }
-
-            VcsDirtyScopeManager.getInstance(project).markEverythingDirty()
         } else {
             show("CheckinEnvironment not available for VCS: ${vcs?.name}")
         }
@@ -216,6 +232,6 @@ project?.let { currentProject ->
     contentManager.addContent(utilContent)
 
     Disposer.register(disposable, Disposable {
-        println("🔻 Conventional Commits plugin stopped.")
+        show("🔻 Conventional Commits plugin stopped.")
     })
 }
