@@ -28,12 +28,23 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
         "docs",
     )
 
+    private val scopeList = mutableListOf(
+        "",
+        "component",
+        "backend",
+        "frontend",
+        "evaluator",
+    )
+
     val buttonPanel = JPanel(GridLayout(2, 2, 2, 2))
 
     val btnCommit = JButton("Commit")
 
     val typeComboBox = JComboBox(commitTypes)
+    private val scopeComboBox = JComboBox(scopeList.toTypedArray())
+
     val importantCheckbox = JCheckBox("Important")
+    val txtProjectKey = JTextField("", 20)
 
     private val textArea = JTextArea(5, 20).apply {
         lineWrap = true
@@ -43,21 +54,17 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
         caretColor = UIManager.getColor("TextArea.caretForeground")
     }
 
-    val btnUndoCommit = JButton("Undo Last Commit").apply {
-        background = UIManager.getColor("Button.background")
-        foreground = UIManager.getColor("Button.foreground")
-    }
-
     init {
+        scopeComboBox.isEditable = true
         btnCommit.addActionListener {
             commitSelectedChanges()
         }
 
         buttonPanel.add(typeComboBox)
-        buttonPanel.add(importantCheckbox)
+        buttonPanel.add(scopeComboBox)
 
         buttonPanel.add(btnCommit)
-        buttonPanel.add(btnUndoCommit)
+        buttonPanel.add(importantCheckbox)
 
         add(JScrollPane(textArea), BorderLayout.CENTER)
         add(buttonPanel, BorderLayout.SOUTH)
@@ -73,6 +80,12 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
             } else if (textArea.text.trim().isBlank()) {
                 Messages.showInfoMessage(project, "Please enter a commit message", "FoxJ: Commit")
             } else {
+                val input = scopeComboBox.editor.item.toString().trim()
+                if (input.isNotEmpty() && !scopeList.contains(input)) {
+                    scopeList.add(0, input)
+                    scopeComboBox.insertItemAt(input, 1)
+                }
+
                 // @todo: we prob should clean up this format/generation later
                 CommitChangeListDialog.commitChanges(
                     project,
@@ -83,8 +96,6 @@ class ConventionalCommitsPanel(private val project: Project) : JPanel(BorderLayo
                     (importantCheckbox.isSelected).let { if (it) "!" else "" } +
                     ": " + textArea.text.trim()
                 )
-
-                show("FoxJ: Commit succeeded.")
             }
         }
     }
