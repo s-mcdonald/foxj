@@ -38,7 +38,6 @@ import javax.swing.*
 
 import liveplugin.*
 
-
 class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) {
 
     private val panel = JPanel()
@@ -81,7 +80,7 @@ class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) 
                     checkBox.addMouseListener(object : MouseAdapter() {
                         override fun mouseClicked(e: MouseEvent) {
                             if (e.clickCount == 2) {
-                                openFileInEditor(project, file)
+                                openDiffForFile(project, file)
                             }
                         }
                     })
@@ -105,7 +104,34 @@ class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) 
     }
 
     private fun openDiffForFile(project: Project, file: VirtualFile) {
-        // @todo: show a diff modal
+
+        val changeListManager = ChangeListManager.getInstance(project)
+        val changes = changeListManager.allChanges
+        val change = changes.firstOrNull { it.virtualFile == file }
+
+        showDiffForChange(project, change)
+    }
+
+    private fun showDiffForChange(project: Project, change: Change?) {
+
+        // @todo: review this method because i dont think we are getting the full experience here
+        val beforeString = change?.beforeRevision?.content.orEmpty()
+        val afterString = change?.afterRevision?.content.orEmpty()
+
+        val beforeContent = DiffContentFactory.getInstance().create(project, beforeString)
+        val afterContent = DiffContentFactory.getInstance().create(project, afterString)
+
+        val title = "Diff: ${change?.virtualFile?.name ?: "File"}"
+
+        val request = SimpleDiffRequest(
+            title,
+            beforeContent,
+            afterContent,
+            "Last Commit",
+            "Working Tree"
+        )
+
+        DiffManager.getInstance().showDiff(project, request)
     }
 }
 
@@ -239,11 +265,8 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
         val checkinEnv: CheckinEnvironment? = vcs?.checkinEnvironment
 
         if (checkinEnv != null) {
-
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
-                    show("Committing in background...")
-
                     val result = checkinEnv.commit(changes, message)
 
                     if (result.isNullOrEmpty()) {
