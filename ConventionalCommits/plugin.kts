@@ -3,6 +3,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.editor.colors.EditorColors
 import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
@@ -20,6 +21,10 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.ui.content.ContentFactory
+import com.intellij.diff.requests.SimpleDiffRequest
+import com.intellij.diff.DiffManager
+import com.intellij.diff.DiffContentFactory
+import com.intellij.icons.AllIcons
 
 import java.awt.BorderLayout
 import java.awt.Color
@@ -31,9 +36,8 @@ import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.*
 
-import com.intellij.icons.AllIcons
-
 import liveplugin.*
+
 
 class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) {
 
@@ -77,9 +81,7 @@ class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) 
                     checkBox.addMouseListener(object : MouseAdapter() {
                         override fun mouseClicked(e: MouseEvent) {
                             if (e.clickCount == 2) {
-                                com.intellij.openapi.fileEditor.FileEditorManager
-                                    .getInstance(project)
-                                    .openFile(file, true)
+                                openFileInEditor(project, file)
                             }
                         }
                     })
@@ -93,39 +95,17 @@ class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) 
         }, InvokeAfterUpdateMode.BACKGROUND_CANCELLABLE, "FoxJ VCS Refresh", ModalityState.NON_MODAL)
     }
 
-    private fun refreshFileList2() {
-        SwingUtilities.invokeLater {
-            panel.removeAll()
-
-            val modifiedFiles: List<VirtualFile> = getModifiedFiles()
-
-            for (file in modifiedFiles) {
-                val checkBox = JCheckBox(file.name)
-                checkBox.toolTipText = file.path
-
-                checkBox.addMouseListener(object : MouseAdapter() {
-                    override fun mouseClicked(e: MouseEvent) {
-                        if (e.clickCount == 2) {
-                            openFileInEditor(file)
-                        }
-                    }
-                })
-
-                panel.add(checkBox)
-            }
-
-            panel.revalidate()
-            panel.repaint()
-        }
-    }
-
     private fun getModifiedFiles(): List<VirtualFile> {
         val changeListManager = ChangeListManager.getInstance(project)
         return changeListManager.allChanges.mapNotNull { it.virtualFile }
     }
 
-    private fun openFileInEditor(file: VirtualFile) {
-        // @todo: Implement logic to open file in editor
+    private fun openFileInEditor(project: Project, file: VirtualFile) {
+        FileEditorManager.getInstance(project).openFile(file, true)
+    }
+
+    private fun openDiffForFile(project: Project, file: VirtualFile) {
+        // @todo: show a diff modal
     }
 }
 
