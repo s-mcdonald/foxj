@@ -37,6 +37,7 @@ import javax.swing.JScrollPane
 import javax.swing.*
 
 import liveplugin.*
+import javax.swing.BorderFactory
 
 class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) {
 
@@ -174,6 +175,20 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
         background = globalScheme.defaultBackground
         foreground = globalScheme.defaultForeground
         caretColor = globalScheme.getColor(EditorColors.CARET_COLOR) ?: Color.WHITE
+        border = BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.GRAY),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        )
+
+    }
+
+    private val textBodyArea = JTextArea(5, 20).apply {
+        lineWrap = true
+        wrapStyleWord = true
+        background = globalScheme.defaultBackground
+        foreground = globalScheme.defaultForeground
+        caretColor = globalScheme.getColor(EditorColors.CARET_COLOR) ?: Color.WHITE
+        border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
     }
 
     init {
@@ -188,7 +203,8 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
         buttonPanel.add(btnCommit)
         buttonPanel.add(importantCheckbox)
 
-        add(JScrollPane(textArea), BorderLayout.CENTER)
+        add(JScrollPane(textArea), BorderLayout.NORTH)
+        add(JScrollPane(textBodyArea), BorderLayout.CENTER)
         add(buttonPanel, BorderLayout.SOUTH)
     }
 
@@ -197,10 +213,15 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
         val changeListManager = ChangeListManager.getInstance(project)
         val changes = changeListManager.defaultChangeList.changes.toList()
 
-        val commitMessage = generateScopeText()
-
         if (!canPerformCommit(changes)) {
             return
+        }
+
+        val baseMessage = generateScopeText()
+        val commitMessage = if (textBodyArea.text.trim().isNotEmpty()) {
+            baseMessage + "\n\n" + textBodyArea.text.trim()
+        } else {
+            baseMessage
         }
 
         ApplicationManager.getApplication().invokeLater {
@@ -317,7 +338,7 @@ project?.let { currentProject ->
         anchor = ToolWindowAnchor.RIGHT
     )
 
-    toolWindow.setIcon(AllIcons.Vcs.CommitNode);
+    toolWindow.setIcon(AllIcons.Actions.Lightning);
 
     val contentManager = toolWindow.contentManager
     val contentFactory = ContentFactory.SERVICE.getInstance()
