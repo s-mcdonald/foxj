@@ -135,7 +135,7 @@ project?.let { currentProject ->
 
     val placeholderPanel = JPanel()
     val toolWindow = currentProject.registerToolWindow(
-        toolWindowId = "Request Pilot",
+        toolWindowId = "HTTPilot",
         component = placeholderPanel,
         disposable = disposable,
         anchor = ToolWindowAnchor.RIGHT
