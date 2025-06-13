@@ -31,12 +31,17 @@ import java.awt.Color
 import java.awt.GridLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.Font
+
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.SwingUtilities
 import javax.swing.JComboBox
 import javax.swing.JButton
 import javax.swing.JTextArea
+import javax.swing.JTextField
 import javax.swing.JCheckBox
 import javax.swing.JPanel
 import javax.swing.JScrollPane
@@ -171,9 +176,19 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
     private val compCommitButton = JButton("Commit")
     private val compCommitTypeCboBox = JComboBox(arrayOfCommitTypes)
     private val compImportantCheckbox = JCheckBox("Important")
-    private val compCommitMessageTextArea = JTextArea(5, 20).apply {
-        lineWrap = true
-        wrapStyleWord = true
+    private val compCommitMessageTextArea = object : JTextField(20) {
+        private val placeholder = "Enter commit message..."
+
+        override fun paintComponent(g: Graphics) {
+            super.paintComponent(g)
+            if (text.isEmpty() && !hasFocus()) {
+                val g2 = g.create() as Graphics2D
+                g2.color = Color.GRAY
+                g2.drawString(placeholder, insets.left + 2, height / 2 + font.size / 2 - 2)
+                g2.dispose()
+            }
+        }
+    }.apply {
         background = globalEditorScheme.defaultBackground
         foreground = globalEditorScheme.defaultForeground
         caretColor = globalEditorScheme.getColor(EditorColors.CARET_COLOR) ?: Color.WHITE
@@ -183,7 +198,19 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
         )
     }
 
-    private val compCommitMessageBodyTextArea = JTextArea(5, 20).apply {
+    private val compCommitMessageBodyTextArea = object : JTextArea(5, 20) {
+        private val placeholder = "Optional: commit body message..."
+
+        override fun paintComponent(g: Graphics) {
+            super.paintComponent(g)
+            if (text.isEmpty() && !hasFocus()) {
+                val g2 = g.create() as Graphics2D
+                g2.color = Color.GRAY
+                g2.drawString(placeholder, insets.left + 2, insets.top + font.size)
+                g2.dispose()
+            }
+        }
+    }.apply {
         lineWrap = true
         wrapStyleWord = true
         background = globalEditorScheme.defaultBackground
