@@ -143,6 +143,7 @@ class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) 
 class ConventionalCommitsPanel(private val project: Project, private val settings: SettingsPanel)
     : JPanel(BorderLayout()) {
 
+    private val globalEditorScheme = EditorColorsManager.getInstance().globalScheme
     private val arrayOfCommitTypes = arrayOf(
         "feat",
         "fix",
@@ -156,7 +157,6 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
         "ci",
         "docs",
     )
-
     private val scopeList = mutableListOf(
         "",
         "component",
@@ -165,51 +165,48 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
         "evaluator",
     )
 
-    private val scopeComboBox = JComboBox(scopeList.toTypedArray())
+    private val panelButtonActions = JPanel(GridLayout(2, 2, 2, 2))
 
-    val buttonPanel = JPanel(GridLayout(2, 2, 2, 2))
-    val btnCommit = JButton("Commit")
-    val typeComboBox = JComboBox(arrayOfCommitTypes)
-    val importantCheckbox = JCheckBox("Important")
-    val globalScheme = EditorColorsManager.getInstance().globalScheme
-
-    private val textArea = JTextArea(5, 20).apply {
+    private val compScopeWidget = JComboBox(scopeList.toTypedArray())
+    private val compCommitButton = JButton("Commit")
+    private val compCommitTypeCboBox = JComboBox(arrayOfCommitTypes)
+    private val compImportantCheckbox = JCheckBox("Important")
+    private val compCommitMessageTextArea = JTextArea(5, 20).apply {
         lineWrap = true
         wrapStyleWord = true
-        background = globalScheme.defaultBackground
-        foreground = globalScheme.defaultForeground
-        caretColor = globalScheme.getColor(EditorColors.CARET_COLOR) ?: Color.WHITE
+        background = globalEditorScheme.defaultBackground
+        foreground = globalEditorScheme.defaultForeground
+        caretColor = globalEditorScheme.getColor(EditorColors.CARET_COLOR) ?: Color.WHITE
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(Color.GRAY),
             BorderFactory.createEmptyBorder(5, 5, 5, 5)
         )
-
     }
 
-    private val textBodyArea = JTextArea(5, 20).apply {
+    private val compCommitMessageBodyTextArea = JTextArea(5, 20).apply {
         lineWrap = true
         wrapStyleWord = true
-        background = globalScheme.defaultBackground
-        foreground = globalScheme.defaultForeground
-        caretColor = globalScheme.getColor(EditorColors.CARET_COLOR) ?: Color.WHITE
+        background = globalEditorScheme.defaultBackground
+        foreground = globalEditorScheme.defaultForeground
+        caretColor = globalEditorScheme.getColor(EditorColors.CARET_COLOR) ?: Color.WHITE
         border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
     }
 
     init {
-        scopeComboBox.isEditable = true
-        btnCommit.addActionListener {
+        compScopeWidget.isEditable = true
+        compCommitButton.addActionListener {
             commitSelectedChanges()
         }
 
-        buttonPanel.add(typeComboBox)
-        buttonPanel.add(scopeComboBox)
+        panelButtonActions.add(compCommitTypeCboBox)
+        panelButtonActions.add(compScopeWidget)
 
-        buttonPanel.add(btnCommit)
-        buttonPanel.add(importantCheckbox)
+        panelButtonActions.add(compCommitButton)
+        panelButtonActions.add(compImportantCheckbox)
 
-        add(JScrollPane(textArea), BorderLayout.NORTH)
-        add(JScrollPane(textBodyArea), BorderLayout.CENTER)
-        add(buttonPanel, BorderLayout.SOUTH)
+        add(JScrollPane(compCommitMessageTextArea), BorderLayout.NORTH)
+        add(JScrollPane(compCommitMessageBodyTextArea), BorderLayout.CENTER)
+        add(panelButtonActions, BorderLayout.SOUTH)
     }
 
     private fun commitSelectedChanges() {
@@ -222,8 +219,8 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
         }
 
         val baseMessage = generateScopeText()
-        val commitMessage = if (textBodyArea.text.trim().isNotEmpty()) {
-            baseMessage + "\n\n" + textBodyArea.text.trim()
+        val commitMessage = if (compCommitMessageBodyTextArea.text.trim().isNotEmpty()) {
+            baseMessage + "\n\n" + compCommitMessageBodyTextArea.text.trim()
         } else {
             baseMessage
         }
@@ -249,7 +246,7 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
             return false
         }
 
-        if (textArea.text.trim().isBlank()) {
+        if (compCommitMessageTextArea.text.trim().isBlank()) {
             Messages.showInfoMessage(project, "Please enter a commit message", "FoxJ: Commit")
             return false
         }
@@ -258,21 +255,21 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
     }
 
     private fun generateScopeText(): String {
-        val input = scopeComboBox.editor.item.toString().trim()
+        val input = compScopeWidget.editor.item.toString().trim()
 
         if (input.isNotEmpty() && !scopeList.contains(input)) {
             scopeList.add(0, input)
-            scopeComboBox.insertItemAt(input, 1)
+            compScopeWidget.insertItemAt(input, 1)
         }
 
         val scopeText = if (input.isNotEmpty()) "($input)" else ""
 
-        return "${typeComboBox.selectedItem}$scopeText${if (importantCheckbox.isSelected) "!" else ""}: ${textArea.text.trim()}"
+        return "${compCommitTypeCboBox.selectedItem}$scopeText${if (compImportantCheckbox.isSelected) "!" else ""}: ${compCommitMessageTextArea.text.trim()}"
     }
 
     override fun addNotify() {
         super.addNotify()
-        rootPane?.defaultButton = btnCommit
+        rootPane?.defaultButton = compCommitButton
     }
 
     private fun commitWithMessage(project: Project, message: String) {
