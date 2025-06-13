@@ -25,6 +25,19 @@
 1. Make sure you have the latest [LivePlugin](https://plugins.jetbrains.com/plugin/7282-liveplugin) installed in your IntelliJ IDEA-based IDE.
 
 2. Move/Copy the files into the live plugin path.
+
+## Usage
+### Conventional Commits
+To add scopes, add a `.ccproject` file in the root directory of your project with the following content.
+```
+#scope
+backend
+frontend
+plugins
+```
+Reload the plugin.
+
+
 This plugin has been tested with:
 
 - IntelliJ IDEA Ultimate
