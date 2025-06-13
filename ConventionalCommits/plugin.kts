@@ -31,13 +31,17 @@ import java.awt.Color
 import java.awt.GridLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import javax.swing.BorderFactory
+import javax.swing.BoxLayout
+import javax.swing.SwingUtilities
+import javax.swing.JComboBox
+import javax.swing.JButton
+import javax.swing.JTextArea
 import javax.swing.JCheckBox
 import javax.swing.JPanel
 import javax.swing.JScrollPane
-import javax.swing.*
 
 import liveplugin.*
-import javax.swing.BorderFactory
 
 class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) {
 
