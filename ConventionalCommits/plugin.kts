@@ -232,8 +232,12 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
         panelButtonActions.add(compCommitButton)
         panelButtonActions.add(compImportantCheckbox)
 
-        add(JScrollPane(compCommitMessageTextArea), BorderLayout.NORTH)
-        add(JScrollPane(compCommitMessageBodyTextArea), BorderLayout.CENTER)
+        val innerPanelMessages = JPanel(BorderLayout()).apply {
+            add(compCommitMessageTextArea, BorderLayout.NORTH)
+            add(JScrollPane(compCommitMessageBodyTextArea), BorderLayout.CENTER)
+        }
+
+        add(innerPanelMessages, BorderLayout.CENTER)
         add(panelButtonActions, BorderLayout.SOUTH)
     }
 
