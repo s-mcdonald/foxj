@@ -148,6 +148,7 @@ class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) 
 class ConventionalCommitsPanel(private val project: Project, private val settings: SettingsPanel)
     : JPanel(BorderLayout()) {
 
+    private val changeListManager = ChangeListManager.getInstance(project)
     private val globalEditorScheme = EditorColorsManager.getInstance().globalScheme
     private val arrayOfCommitTypes = arrayOf(
         "feat",
@@ -237,8 +238,6 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
     }
 
     private fun commitSelectedChanges() {
-
-        val changeListManager = ChangeListManager.getInstance(project)
         val changes = changeListManager.defaultChangeList.changes.toList()
 
         if (!canPerformCommit(changes)) {
@@ -300,7 +299,6 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
     }
 
     private fun commitWithMessage(project: Project, message: String) {
-        val changeListManager = ChangeListManager.getInstance(project)
         val defaultChangeList: LocalChangeList = changeListManager.defaultChangeList
         val changes = defaultChangeList.changes.toList()
 
