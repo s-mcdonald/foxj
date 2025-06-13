@@ -33,7 +33,6 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.Graphics
 import java.awt.Graphics2D
-import java.awt.Font
 
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
@@ -46,7 +45,47 @@ import javax.swing.JCheckBox
 import javax.swing.JPanel
 import javax.swing.JScrollPane
 
+import java.io.File
 import liveplugin.*
+
+class LocalSettingsReader(private val project: Project) {
+    fun getProjectDirectory(): String? {
+        return project.basePath?.let { File(it).absolutePath }
+    }
+
+    private fun readProjectFooJccFile(): String {
+        val projectDir = project.basePath?.let { File(it) } ?: return ""
+        val fooFile = File(projectDir, ".ccproject")
+        return if (fooFile.exists() && fooFile.isFile) {
+            fooFile.readText()
+        } else {
+            ""
+        }
+    }
+
+    fun getScopesFromSettings(): MutableList<String> {
+        val content = readProjectFooJccFile()
+        val lines = content.lines()
+        val scopes = mutableListOf<String>()
+        var inScopeSection = false
+
+        scopes.add("")
+
+        for (line in lines) {
+            val trimmed = line.trim()
+            when {
+                trimmed.startsWith("#") -> {
+                    inScopeSection = trimmed.equals("#scope", ignoreCase = true)
+                }
+                inScopeSection && trimmed.isNotEmpty() -> {
+                    scopes.add(trimmed)
+                }
+            }
+        }
+
+        return scopes
+    }
+}
 
 class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) {
 
@@ -145,8 +184,11 @@ class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) 
     }
 }
 
-class ConventionalCommitsPanel(private val project: Project, private val settings: SettingsPanel)
-    : JPanel(BorderLayout()) {
+class ConventionalCommitsPanel(
+        private val project: Project,
+        private val settings: SettingsPanel,
+        private val settingsReader: LocalSettingsReader
+    )  : JPanel(BorderLayout()) {
 
     private val changeListManager = ChangeListManager.getInstance(project)
     private val globalEditorScheme = EditorColorsManager.getInstance().globalScheme
@@ -163,13 +205,7 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
         "ci",
         "docs",
     )
-    private val scopeList = mutableListOf(
-        "",
-        "component",
-        "backend",
-        "frontend",
-        "evaluator",
-    )
+    private val scopeList = settingsReader.getScopesFromSettings()
 
     private val panelButtonActions = JPanel(GridLayout(2, 2, 2, 2))
 
@@ -356,8 +392,10 @@ project?.let { currentProject ->
     val disposable = Disposer.newDisposable("foxJCommitsPanel")
     Disposer.register(pluginDisposable, disposable)
 
+    val settingReader = LocalSettingsReader(currentProject)
+
     val settingsPanel = SettingsPanel(currentProject)
-    val conventionalCommitsPanel = ConventionalCommitsPanel(currentProject, settingsPanel)
+    val conventionalCommitsPanel = ConventionalCommitsPanel(currentProject, settingsPanel, settingReader)
     val filesPanel = ModifiedFilesPanel(currentProject)
 
     val placeholderPanel = JPanel()
