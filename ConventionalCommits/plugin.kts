@@ -47,6 +47,7 @@ class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) 
 
     private val panel = JPanel()
     private val scrollPane = JScrollPane(panel)
+    private val changeListManager = ChangeListManager.getInstance(project)
 
     init {
         layout = BorderLayout()
@@ -100,7 +101,6 @@ class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) 
     }
 
     private fun getModifiedFiles(): List<VirtualFile> {
-        val changeListManager = ChangeListManager.getInstance(project)
         return changeListManager.allChanges.mapNotNull { it.virtualFile }
     }
 
@@ -110,9 +110,9 @@ class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) 
 
     private fun openDiffForFile(project: Project, file: VirtualFile) {
 
-        val changeListManager = ChangeListManager.getInstance(project)
-        val changes = changeListManager.allChanges
-        val change = changes.firstOrNull { it.virtualFile == file }
+        val change = changeListManager.allChanges.firstOrNull {
+            it.virtualFile == file
+        }
 
         showDiffForChange(project, change)
     }
@@ -143,7 +143,7 @@ class ModifiedFilesPanel(private val project: Project) : JPanel(BorderLayout()) 
 class ConventionalCommitsPanel(private val project: Project, private val settings: SettingsPanel)
     : JPanel(BorderLayout()) {
 
-    private val commitTypes = arrayOf(
+    private val arrayOfCommitTypes = arrayOf(
         "feat",
         "fix",
         "chore",
@@ -169,7 +169,7 @@ class ConventionalCommitsPanel(private val project: Project, private val setting
 
     val buttonPanel = JPanel(GridLayout(2, 2, 2, 2))
     val btnCommit = JButton("Commit")
-    val typeComboBox = JComboBox(commitTypes)
+    val typeComboBox = JComboBox(arrayOfCommitTypes)
     val importantCheckbox = JCheckBox("Important")
     val globalScheme = EditorColorsManager.getInstance().globalScheme
 
