@@ -26,6 +26,12 @@ class RequestPilotPanel(
     private val methodDropdown = JComboBox(arrayOf("GET", "POST", "PUT", "DELETE", "PATCH"))
     private val urlField = JTextField("https://jsonplaceholder.typicode.com/todos/1")
     private val sendButton = JButton("Send Request")
+    private val headersArea = JTextArea().apply {
+        lineWrap = true
+        wrapStyleWord = true
+        isEditable = false
+        border = BorderFactory.createTitledBorder("Response Headers")
+    }
     private val responseArea = JTextArea().apply {
         lineWrap = true
         wrapStyleWord = true
@@ -39,10 +45,13 @@ class RequestPilotPanel(
             add(sendButton, BorderLayout.EAST)
         }
 
-        val scrollPane = JScrollPane(responseArea)
+        val tabbedPane = JTabbedPane().apply {
+            addTab("Headers", JScrollPane(headersArea))
+            addTab("Body", JScrollPane(responseArea))
+        }
 
         add(topPanel, BorderLayout.NORTH)
-        add(scrollPane, BorderLayout.CENTER)
+        add(tabbedPane, BorderLayout.CENTER)
 
         sendButton.addActionListener {
             val urlText = urlField.text.trim()
@@ -58,6 +67,7 @@ class RequestPilotPanel(
 
     private fun performRequest(urlText: String) {
         responseArea.text = "Sending request..."
+        headersArea.text = ""
 
         ApplicationManager.getApplication().executeOnPooledThread {
             try {
@@ -80,16 +90,23 @@ class RequestPilotPanel(
                     conn.setRequestProperty("Authorization", "Basic $encoded")
                 }
 
+                val responseHeaders = conn.headerFields
+                    .filterKeys { it != null }
+                    .entries
+                    .joinToString("\n") { "${it.key}: ${it.value.joinToString()}" }
+
                 val reader = BufferedReader(InputStreamReader(conn.inputStream))
                 val response = reader.readText()
                 reader.close()
 
                 SwingUtilities.invokeLater {
+                    headersArea.text = responseHeaders
                     responseArea.text = response
                 }
 
             } catch (e: Exception) {
                 SwingUtilities.invokeLater {
+                    headersArea.text = ""
                     responseArea.text = "❌ Error: ${e.message}"
                 }
             }
